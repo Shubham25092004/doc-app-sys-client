@@ -1,86 +1,84 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   FaSignOutAlt,
   FaUsers,
   FaPlus,
   FaUserMd,
   FaCalendarAlt
-} from "react-icons/fa"
-import { useNavigate } from "react-router-dom"
-import { getLoggedUser } from '../api/userAPI'
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { getLoggedUser } from '../api/userAPI';
 
-// components
-import Profile from '../components/Profile'
-import Appointments from '../components/Appoinments'
-import CreateAppointment from '../components/CreateAppoinment'
-import DoctorsList from '../components/DoctorList'
-import UsersList from '../components/UserList'
-import ApplyDoctor from '../components/ApplyDoctor'
-import DoctorAppointments from "../components/DoctorAppointments"
+// Components
+import Profile from '../components/Profile';
+import Appointments from '../components/Appoinments';
+import CreateAppointment from '../components/CreateAppoinment';
+import DoctorsList from '../components/DoctorList';
+import UsersList from '../components/UserList';
+import DoctorAppointments from "../components/DoctorAppointments";
+import ApplyDoctor from '../components/ApplyDoctor';
 
 const DashboardPage = () => {
-  const [user, setUser] = useState(null)
-  const [activePage, setActivePage] = useState("profile")
-  const navigate = useNavigate()
+  const [user, setUser] = useState(null);
+  const [activePage, setActivePage] = useState("profile");
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/', { replace: true })
-  }
+    localStorage.removeItem('token');
+    navigate('/', { replace: true });
+  };
 
   const fetchUser = async () => {
     try {
-      const res = await getLoggedUser()
-      if (res.data.success) {
-        setUser(res.data.user)
-      }
+      const res = await getLoggedUser();
+      if (res.data.success) setUser(res.data.user);
     } catch (err) {
-      handleLogout()
+      handleLogout();
     }
-  }
+  };
 
   useEffect(() => {
-    fetchUser()
-  }, [])
+    fetchUser();
+  }, []);
 
   /* ======================
-     MAIN CONTENT
+       MAIN CONTENT
   =======================*/
   const renderContent = () => {
-    if (!user) return null
+    if (!user) return null;
 
     switch (activePage) {
       case "profile":
-        return <Profile />
+        return <Profile />;
 
       case "appointments":
-        return <Appointments />
+        return <Appointments />;
 
       case "doctorAppointments":
-        return <DoctorAppointments />
+        return <DoctorAppointments />;
 
       case "create-appointment":
-        return <CreateAppointment />
+        return <CreateAppointment />;
 
       case "doctors":
-        return <DoctorsList />
+        return <DoctorsList />;
 
       case "users":
-        return <UsersList />
+        return <UsersList />;
 
       case "apply-doctor":
-        return <ApplyDoctor />
+        return <ApplyDoctor />; // Show DoctorList for applying
 
       default:
-        return <h4>Welcome to Dashboard</h4>
+        return <h4>Welcome to Dashboard</h4>;
     }
-  }
+  };
 
   /* ======================
-     SIDEBAR MENU
+       SIDEBAR MENU
   =======================*/
   const renderMenu = () => {
-    if (!user) return null
+    if (!user) return null;
 
     if (user.role === "Admin") {
       return (
@@ -91,7 +89,7 @@ const DashboardPage = () => {
           <MenuBtn label="All Users" icon={<FaUsers />} onClick={() => setActivePage("users")} />
           <MenuBtn label="Create Appointment" icon={<FaPlus />} onClick={() => setActivePage("create-appointment")} />
         </>
-      )
+      );
     }
 
     if (user.role === "Doctor") {
@@ -103,11 +101,11 @@ const DashboardPage = () => {
             icon={<FaCalendarAlt />}
             onClick={() => setActivePage("doctorAppointments")}
           />
-          
         </>
-      )
+      );
     }
 
+    // User menu
     return (
       <>
         <MenuBtn label="Profile" onClick={() => setActivePage("profile")} />
@@ -115,13 +113,12 @@ const DashboardPage = () => {
         <MenuBtn label="Appointments" icon={<FaCalendarAlt />} onClick={() => setActivePage("appointments")} />
         <MenuBtn label="Apply for Doctor" icon={<FaUserMd />} onClick={() => setActivePage("apply-doctor")} />
       </>
-    )
-  }
+    );
+  };
 
   return (
     <div className="container-fluid">
       <div className="row" style={{ minHeight: "100vh" }}>
-
         {/* Sidebar */}
         <div className="col-md-3 col-lg-2 bg-dark text-white p-3">
           <h5 className="text-center mb-4">👤 {user?.name}</h5>
@@ -141,20 +138,18 @@ const DashboardPage = () => {
         <div className="col-md-9 col-lg-10 p-4 bg-light">
           {renderContent()}
         </div>
-
       </div>
     </div>
-  )
-}
+  );
+};
 
 const MenuBtn = ({ label, icon, onClick }) => (
   <li className="nav-item mb-2">
     <button className="btn btn-dark w-100 text-start" onClick={onClick}>
       {icon && <span className="me-2">{icon}</span>}
       {label}
-      
     </button>
   </li>
-)
+);
 
-export default DashboardPage
+export default DashboardPage;

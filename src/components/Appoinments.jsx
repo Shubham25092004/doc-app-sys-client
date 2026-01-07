@@ -1,85 +1,137 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   getAppointmentsByUser,
   deleteAppointment,
+  updateAppointment,
 } from "../api/appointmentAPI";
 
 const Appointments = () => {
-  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
+  const [editData, setEditData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [toastMsg, setToastMsg] = useState("");
-  const [showToast, setShowToast] = useState(false);
+  const [toast, setToast] = useState({ msg: "", type: "" });
 
   useEffect(() => {
     fetchAppointments();
   }, []);
 
-  // Fetch appointments
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const res = await getAppointmentsByUser();
-      if (res.data.success) {
-        setAppointments(res.data.appointments);
-      }
+      if (res.data.success) setAppointments(res.data.appointments);
     } catch (err) {
-      console.error(err);
-      showToastMessage("Failed to fetch appointments");
+      showToast("Failed to fetch appointments", "danger");
     } finally {
       setLoading(false);
     }
   };
 
-  // Navigate to CreateAppointment page for editing
-  const handleEdit = (id) => {
-    navigate(`/create-appointment/${id}`);
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast({ msg: "", type: "" }), 3000);
   };
 
-  // Delete appointment
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this appointment?"
-    );
-    if (!confirmDelete) return;
-
+    if (!window.confirm("Are you sure?")) return;
     try {
       const res = await deleteAppointment(id);
       if (res.data.success) {
-        showToastMessage("Appointment deleted successfully");
-        fetchAppointments(); // refresh list
+        showToast("Appointment deleted successfully");
+        fetchAppointments();
       } else {
-        showToastMessage(res.data.msg || "Failed to delete appointment");
+        showToast(res.data.msg || "Failed to delete", "danger");
       }
     } catch (err) {
-      console.error(err);
-      showToastMessage("Error deleting appointment");
+      showToast("Server error", "danger");
     }
   };
 
-  // Show toast
-  const showToastMessage = (msg) => {
-    setToastMsg(msg);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const handleUpdate = async () => {
+    if (!editData.dateTime || !editData.doctorId) {
+      showToast("All fields are required", "danger");
+      return;
+    }
+
+    try {
+      const res = await updateAppointment(editData.id, {
+        dateTime: editData.dateTime,
+        doctorId: editData.doctorId,
+      });
+      if (res.data.success) {
+        showToast("Appointment updated successfully");
+        setEditData(null);
+        fetchAppointments();
+      } else {
+        showToast(res.data.msg || "Failed to update", "danger");
+      }
+    } catch (err) {
+      showToast("Server error", "danger");
+    }
+  };
+
+  const formatDateTimeLocal = (dt) => {
+    const d = new Date(dt);
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
   };
 
   if (loading) return <p>Loading appointments...</p>;
-  if (appointments.length === 0) return <p>No appointments found</p>;
+  if (!appointments.length) return <p>No appointments found.</p>;
 
   return (
     <div className="container mt-4">
-      <h4>My Appointments</h4>
-      <div className="row">
-        {appointments.map((app) => (
-          <div key={app.id} className="col-md-6 mb-3">
-            <div className="card p-3 shadow-sm">
-              <p>
-                <b>Date:</b> {new Date(app.dateTime).toLocaleString()}
-              </p>
-              <p>
-                <b>Status:</b>{" "}
+      <h4>📅 My Appointments</h4>
+
+      {/* EDIT FORM */}
+      {editData && (
+        <div className="card p-3 mb-4">
+          <h5>Edit Appointment</h5>
+
+          <input
+            type="datetime-local"
+            className="form-control mb-2"
+            value={formatDateTimeLocal(editData.dateTime)}
+            onChange={(e) =>
+              setEditData({ ...editData, dateTime: e.target.value })
+            }
+          />
+
+          <input
+            className="form-control mb-2"
+            placeholder="Doctor ID"
+            value={editData.doctorId}
+            onChange={(e) =>
+              setEditData({ ...editData, doctorId: e.target.value })
+            }
+          />
+
+          <button className="btn btn-success me-2" onClick={handleUpdate}>
+            Update
+          </button>
+          <button className="btn btn-secondary" onClick={() => setEditData(null)}>
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* APPOINTMENT LIST */}
+      <table className="table table-bordered">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date & Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {appointments.map((app) => (
+            <tr key={app.id}>
+              <td>{app.id}</td>
+              <td>{new Date(app.dateTime).toLocaleString()}</td>
+              <td>
                 <span
                   className={`badge ${
                     app.status === "Pending"
@@ -95,12 +147,17 @@ const Appointments = () => {
                 >
                   {app.status}
                 </span>
-              </p>
-
-              <div className="d-flex gap-2">
+              </td>
+              <td>
                 <button
-                  className="btn btn-sm btn-primary"
-                  onClick={() => handleEdit(app.id)}
+                  className="btn btn-sm btn-warning me-2"
+                  onClick={() =>
+                    setEditData({
+                      id: app.id,
+                      dateTime: app.dateTime,
+                      doctorId: app.doctorId,
+                    })
+                  }
                 >
                   Edit
                 </button>
@@ -111,19 +168,21 @@ const Appointments = () => {
                 >
                   Delete
                 </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      {/* Toast notification */}
-      {showToast && (
+      {/* Toast */}
+      {toast.msg && (
         <div
-          className="toast show position-fixed bottom-0 end-0 m-3"
+          className={`toast show position-fixed bottom-0 end-0 m-3`}
           style={{ zIndex: 9999 }}
         >
-          <div className="toast-body bg-success text-white">{toastMsg}</div>
+          <div className={`toast-body bg-${toast.type === "danger" ? "danger" : "success"} text-white`}>
+            {toast.msg}
+          </div>
         </div>
       )}
     </div>

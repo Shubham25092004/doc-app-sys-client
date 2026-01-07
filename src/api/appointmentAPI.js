@@ -1,16 +1,21 @@
 import axiosInstance from "./axiosInstance";
 
-// Create appointment
+// USER → create appointment
 export const saveAppointment = (data) => {
   return axiosInstance.post("/appointment/createAppoint", data);
 };
 
-
+// USER → see own appointments
 export const getAppointmentsByUser = () => {
   return axiosInstance.get("/appointment/getAppointmentsByUser");
 };
 
-// Doctor: update appointment status
+// USER → update appointment ✅ ADD THIS
+export const updateAppointment = (id, data) => {
+  return axiosInstance.put(`/appointment/updateAppoint/${id}`, data);
+};
+
+// DOCTOR → update appointment status
 export const updateAppointmentStatus = (id, status) => {
   return axiosInstance.patch(
     `/appointment/statusUpdateByDoctor/${id}`,
@@ -18,12 +23,13 @@ export const updateAppointmentStatus = (id, status) => {
   );
 };
 
-// Doctor: see assigned appointments
+// DOCTOR → see assigned appointments
 export const showAppointmentsOfDoctor = () => {
   return axiosInstance.get("/appointment/showAppointmentsOfDoctor");
 };
 
-// Delete appointment by ID
+// USER → delete appointment
 export const deleteAppointment = (id) => {
   return axiosInstance.delete(`/appointment/deleteAppoint/${id}`);
 };
+
